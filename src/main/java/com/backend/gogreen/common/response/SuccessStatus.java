@@ -12,12 +12,12 @@ public enum SuccessStatus {
     /**
      * 200 OK
      */
-
+    MEMBER_LOGIN_SUCCESS(HttpStatus.OK,"로그인 성공"),
 
     /**
      * 201 CREATED
      */
-
+    MEMBER_SIGNUP_SUCCESS(HttpStatus.CREATED, "회원가입 성공"),
     ;
 
     private final HttpStatus httpStatus;
