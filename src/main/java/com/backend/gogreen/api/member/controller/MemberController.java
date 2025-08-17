@@ -1,6 +1,7 @@
 package com.backend.gogreen.api.member.controller;
 
 import com.backend.gogreen.api.member.dto.MemberSignupRequestDTO;
+import com.backend.gogreen.api.member.jwt.service.JwtService;
 import com.backend.gogreen.api.member.service.MemberService;
 import com.backend.gogreen.common.exception.BadRequestException;
 import com.backend.gogreen.common.response.ApiResponse;
@@ -8,7 +9,6 @@ import com.backend.gogreen.common.response.ErrorStatus;
 import com.backend.gogreen.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

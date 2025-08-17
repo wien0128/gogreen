@@ -1,7 +1,10 @@
 package com.backend.gogreen.api.member.jwt.filter;
 
 import com.backend.gogreen.api.member.entity.Member;
+import com.backend.gogreen.api.member.jwt.service.JwtService;
+import com.backend.gogreen.api.member.jwt.service.RefreshTokenService;
 import com.backend.gogreen.api.member.repository.MemberRepository;
+import com.backend.gogreen.common.config.security.SecurityMember;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +34,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
+    private final RefreshTokenService refreshTokenService;
 
     private static final String[] SWAGGER_URIS = {
             "/swagger-ui",
@@ -76,19 +80,23 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         Optional<String> accessToken = extractToken(request, accessTokenHeader)
                 .filter(jwtService::isTokenValid);
 
+        accessToken.flatMap(jwtService::extractMemberIdFromToken)
+                .flatMap(id -> memberRepository.findById(Long.valueOf(id)))
+                .ifPresent(this::setAuthentication);
 
+        filterChain.doFilter(request, response);
     }
 
     // Refresh Token, Access Token 재발급 및 인증 핸들러
-    private void handleRefreshToken(HttpServletResponse response, String refreshToken) throws IOException {
+    private void handleRefreshToken(HttpServletResponse response, String refreshToken) {
 
         memberRepository.findByRefreshToken(refreshToken)
                 .ifPresent(user -> {
-                    String newAccessToken = jwtService.createAccessToken(user.getId());
+                    String newAccessToken = jwtService.createAccessToken(user.getId(), user.getEmail(), user.getRole());
                     String newRefreshToken = jwtService.createRefreshToken(user.getId());
 
                     // Refresh Token 갱신
-                    jwtService.updateRefreshToken(user.getId(), newRefreshToken);
+                    refreshTokenService.updateRefreshToken(user.getId(), newRefreshToken);
 
                     // 새로운 Access Token, Refresh Token 헤더로 재설정
                     response.setHeader(accessTokenHeader, "Bearer " + newAccessToken);
@@ -111,7 +119,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         return Optional.empty();
     }
 
-    // SecurityContext에 사용자 인증 정보를 등록
+    // SecurityContext 에 사용자 인증 정보를 등록
     private void setAuthentication(Member member) {
 
         SecurityMember securityMember = SecurityMember.builder()
@@ -122,7 +130,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 .build();
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                securityMember, null, null);
+                securityMember, null, securityMember.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }

@@ -45,6 +45,9 @@ dependencies {
 	// Spring Validation
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    // passay
+    implementation 'org.passay:passay:1.6.4'
+
 	// Spring Web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
