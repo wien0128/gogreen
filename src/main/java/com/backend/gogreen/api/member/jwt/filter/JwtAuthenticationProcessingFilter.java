@@ -68,9 +68,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                     .filter(jwtService::isTokenValid);
 
             // Refresh Token 이 유효하다면 Access Token 을 재발급 후 인증 정보를 재설정
-            if (refreshToken.isPresent()) {
-                handleRefreshToken(response, refreshToken.get());
-            }
+            refreshToken.ifPresent(s -> handleRefreshToken(response, s));
 
             filterChain.doFilter(request, response);
             return;
@@ -81,7 +79,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                 .filter(jwtService::isTokenValid);
 
         accessToken.flatMap(jwtService::extractMemberIdFromToken)
-                .flatMap(id -> memberRepository.findById(Long.valueOf(id)))
+                .flatMap(memberRepository::findByUserId)
                 .ifPresent(this::setAuthentication);
 
         filterChain.doFilter(request, response);
@@ -92,11 +90,11 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
         memberRepository.findByRefreshToken(refreshToken)
                 .ifPresent(user -> {
-                    String newAccessToken = jwtService.createAccessToken(user.getId(), user.getEmail(), user.getRole());
-                    String newRefreshToken = jwtService.createRefreshToken(user.getId());
+                    String newAccessToken = jwtService.createAccessToken(user.getUserId(), user.getEmail(), user.getRole());
+                    String newRefreshToken = jwtService.createRefreshToken(user.getUserId());
 
                     // Refresh Token 갱신
-                    refreshTokenService.updateRefreshToken(user.getId(), newRefreshToken);
+                    refreshTokenService.updateRefreshToken(user.getUserId(), newRefreshToken);
 
                     // 새로운 Access Token, Refresh Token 헤더로 재설정
                     response.setHeader(accessTokenHeader, "Bearer " + newAccessToken);

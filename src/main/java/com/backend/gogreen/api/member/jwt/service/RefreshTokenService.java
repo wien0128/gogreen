@@ -11,8 +11,8 @@ public class RefreshTokenService {
 
     private final MemberRepository memberRepository;
 
-    public void updateRefreshToken(Long memberId, String refreshToken) {
-        memberRepository.findById(memberId).ifPresent(member -> {
+    public void updateRefreshToken(String userId, String refreshToken) {
+        memberRepository.findByUserId(userId).ifPresent(member -> {
             Member updatedMember = member.updateRefreshToken(refreshToken);
             memberRepository.save(updatedMember);
         });

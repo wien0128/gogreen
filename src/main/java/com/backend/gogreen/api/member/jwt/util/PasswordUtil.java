@@ -4,6 +4,7 @@ import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
 
+// 랜덤 비밀번호 생성기
 public class PasswordUtil {
 
     public static String generateRandomPassword() {

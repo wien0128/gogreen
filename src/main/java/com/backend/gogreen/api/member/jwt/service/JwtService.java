@@ -1,6 +1,5 @@
 package com.backend.gogreen.api.member.jwt.service;
 
-import com.backend.gogreen.api.member.entity.Member;
 import com.backend.gogreen.api.member.entity.Role;
 import com.backend.gogreen.api.member.repository.MemberRepository;
 import com.backend.gogreen.common.exception.UnauthorizedException;
@@ -8,9 +7,7 @@ import com.backend.gogreen.common.response.ErrorStatus;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.transaction.Transactional;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -50,13 +47,13 @@ public class JwtService {
     }
 
     // Access Token 발급
-    public String createAccessToken(Long memberId, String email, Role role) {
+    public String createAccessToken(String memberId, String email, Role role) {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpirationPeriod);
 
         return Jwts.builder()
-                .setSubject(memberId.toString())
+                .setSubject(memberId)
                 .claim("email", email)
                 .claim("role", role.name())
                 .claim("type", "ACCESS")
@@ -67,13 +64,13 @@ public class JwtService {
     }
 
     // Refresh Token 발급
-    public String createRefreshToken(Long memberId) {
+    public String createRefreshToken(String memberId) {
         
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpirationPeriod);
 
         return Jwts.builder()
-                .setSubject(memberId.toString())
+                .setSubject(memberId)
                 .claim("type", "REFRESH")
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -81,7 +78,8 @@ public class JwtService {
                 .compact();
     }
 
-    public Map<String, String> createAccessAndRefreshToken(Long memberId, String email, Role role) {
+    // Access, RefreshToken 발급
+    public Map<String, String> createAccessAndRefreshToken(String memberId, String email, Role role) {
 
         String accessToken = createAccessToken(memberId, email, role);
         String refreshToken = createRefreshToken(memberId);

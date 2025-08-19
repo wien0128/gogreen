@@ -1,5 +1,7 @@
 package com.backend.gogreen.api.member.controller;
 
+import com.backend.gogreen.api.member.dto.MemberLoginRequestDTO;
+import com.backend.gogreen.api.member.dto.MemberLoginResponseDTO;
 import com.backend.gogreen.api.member.dto.MemberSignupRequestDTO;
 import com.backend.gogreen.api.member.jwt.service.JwtService;
 import com.backend.gogreen.api.member.service.MemberService;
@@ -13,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @Tag(name = "Member", description = "Member API")
 @RestController
@@ -33,7 +37,7 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(
+    public ResponseEntity<ApiResponse<MemberLoginResponseDTO>> login(
             @Validated @RequestBody MemberLoginRequestDTO loginRequestDTO) {
 
         MemberLoginResponseDTO respDTO = memberService.login(loginRequestDTO);
@@ -42,19 +46,23 @@ public class MemberController {
     }
 
     @GetMapping("/token-reissue")
-    public ResponseEntity<ApiResponse<Void>> reissueToken(
+    public ResponseEntity<ApiResponse<Map<String, String>>> reissueToken(
             @RequestHeader(value = "Authorization-Refresh", required = false) String refreshToken) {
 
+        // 리프레시 토큰이 없을 경우 예외
         if (refreshToken == null || refreshToken.isEmpty()) {
             throw new BadRequestException(ErrorStatus.MISSING_REFRESH_TOKEN_EXCEPTION.getMessage());
         }
 
+        // "Bearer " 문자열 제거 후 토큰 검증
         String pureRefreshToken = refreshToken.substring("Bearer ".length());
-        if (jwtService.isTokenValid(pureRefreshToken)) {
+        if (!jwtService.isTokenValid(pureRefreshToken)) {
             throw new BadRequestException(ErrorStatus.UNAUTHORIZED_REFRESH_TOKEN_EXCEPTION.getMessage());
         }
 
-        return ApiResponse.success_only(SuccessStatus.MEMBER_REISSUE_TOKEN_SUCCESS);
+        Map<String, String> tokens = memberService.reissueTokens(pureRefreshToken);
+
+        return ApiResponse.success(SuccessStatus.MEMBER_REISSUE_TOKEN_SUCCESS, tokens);
     }
 
 }

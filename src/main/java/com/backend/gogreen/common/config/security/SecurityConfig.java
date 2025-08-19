@@ -1,5 +1,8 @@
 package com.backend.gogreen.common.config.security;
 
+import com.backend.gogreen.api.member.oauth2.handler.OAuth2FailureHandler;
+import com.backend.gogreen.api.member.oauth2.handler.OAuth2SuccessHandler;
+import com.backend.gogreen.api.member.oauth2.service.CustomOAuth2UserService;
 import com.backend.gogreen.common.config.jwt.JwtConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +31,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtConfig jwtConfig;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -72,10 +78,10 @@ public class SecurityConfig {
                                 "/api-doc", "/health", "/v3/api-docs/**",
                                 "/swagger-resources/**","/swagger-ui/**"
                         ).permitAll()
-                        // 로그인, 회원가입 토큰 재발급 허가
+                        // 인덱스 페이지, 로그인, 회원가입 토큰 재발급 허가
                         .requestMatchers(
                                 "/api/v1/member/login", "/api/v1/member/signup",
-                                "/api/v1/member/token-reissue"
+                                "/api/v1/member/token-reissue", "/oauth2/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -97,6 +103,12 @@ public class SecurityConfig {
                                                     """);
                                 })
                         )
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/oauth2/authorize")
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2FailureHandler)
+                        .failureHandler(oAuth2FailureHandler)
+                )
                 .addFilterBefore(jwtConfig.jwtAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
